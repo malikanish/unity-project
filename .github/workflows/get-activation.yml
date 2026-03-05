@@ -5,8 +5,12 @@ jobs:
   activation:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
       - name: Request Activation File
-        uses: game-ci/unity-request-activation-file@v2
+        id: getManualLicenseFile
+        uses: game-ci/unity-request-activation-file@v4
         with:
           unityVersion: 2022.1.10f1
       
@@ -14,4 +18,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Unity-Activation-File
-          path: Unity_v2022.1.10f1.alf
+          path: ${{ steps.getManualLicenseFile.outputs.filePath }}
