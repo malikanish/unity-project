@@ -84,7 +84,7 @@ jobs:
           buildName: ${{ env.BUILD_NAME }}
           buildsPath: ${{ env.BUILD_PATH }}
       
-      # Step 6: Upload APK as Artifact
+      # Step 7: Upload APK as Artifact
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -92,7 +92,7 @@ jobs:
           path: ${{ env.BUILD_PATH }}/**/*.apk
           retention-days: 30
       
-      # Step 7: Upload AAB as Artifact
+      # Step 8: Upload AAB as Artifact
       - name: Upload AAB Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -100,7 +100,7 @@ jobs:
           path: ${{ env.BUILD_PATH }}/**/*.aab
           retention-days: 30
       
-      # Step 8: Send Slack Notification
+      # Step 9: Send Slack Notification
       - name: Send Slack Notification
         if: success()
         uses: slackapi/slack-github-action@v1.25.0
@@ -159,7 +159,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
       
-      # Step 9: Send Slack Notification on Failure
+      # Step 10: Send Slack Notification on Failure
       - name: Send Slack Notification on Failure
         if: failure()
         uses: slackapi/slack-github-action@v1.25.0
@@ -209,7 +209,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
       
-      # Step 10: Cleanup
+      # Step 11: Cleanup
       - name: Cleanup Keystore
         if: always()
         run: |
