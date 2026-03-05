@@ -1,7 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+
+// ✅ FIX: UnityEditor sirf Editor build mein include hoga, Android mein nahi
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
+
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -18,7 +23,8 @@ public class ShadowCaster2DGenerator : MonoBehaviour
     {
         Clear();
         if (!_compositeCollider2D) _compositeCollider2D = GetComponent<CompositeCollider2D>();
-        for (int i = 0; i < _compositeCollider2D.pathCount; i++) CreateShadowCaster(i, CreateShapePath(i));
+        for (int i = 0; i < _compositeCollider2D.pathCount; i++)
+            CreateShadowCaster(i, CreateShapePath(i));
     }
 
     public void Clear()
@@ -55,6 +61,9 @@ public class ShadowCaster2DGenerator : MonoBehaviour
     }
 }
 
+// ✅ FIX: Ye poora class sirf Unity Editor mein compile hoga
+// Android build mein ye code exist hi nahi karega — isliye error nahi aayega
+#if UNITY_EDITOR
 [CustomEditor(typeof(ShadowCaster2DGenerator))]
 public class ShadowCaster2DGeneratorEditor : Editor
 {
@@ -68,25 +77,19 @@ public class ShadowCaster2DGeneratorEditor : Editor
         if (GUILayout.Button("Clear")) shadowCaster2DGenerator.Clear();
         EditorGUILayout.EndHorizontal();
         GUILayout.Space(10f);
-        shadowCaster2DGenerator.ClearShadowCastersOnly 
+        shadowCaster2DGenerator.ClearShadowCastersOnly
             = GUILayout.Toggle(shadowCaster2DGenerator.ClearShadowCastersOnly, "Clear ShadowCaster2D Childs Only");
     }
 }
+#endif
 
 public class ShadowCaster2DReflection
 {
     private readonly ShadowCaster2D _shadowCaster2D;
-    //private readonly FieldInfo _applyToSortingLayers;
     private readonly FieldInfo _meshField;
     private readonly FieldInfo _shapePathField;
     private readonly FieldInfo _shapePathHashField;
     private readonly MethodInfo _generateShadowMeshMethod;
-
-    //public int[] ApplyToSortingLayers 
-    //{
-    //    get => _applyToSortingLayers.GetValue(_shadowCaster2D) as int[];
-    //    set => _applyToSortingLayers.SetValue(_shadowCaster2D, value);
-    //}
 
     public Mesh Mesh
     {
@@ -109,13 +112,14 @@ public class ShadowCaster2DReflection
     public ShadowCaster2DReflection(ShadowCaster2D shadowCaster2D)
     {
         _shadowCaster2D = shadowCaster2D;
-        //_applyToSortingLayers = typeof(ShadowCaster2D).GetField("m_ApplyToSortingLayers", BindingFlags.NonPublic | BindingFlags.Instance);
         _meshField = typeof(ShadowCaster2D).GetField("m_Mesh", BindingFlags.NonPublic | BindingFlags.Instance);
         _shapePathField = typeof(ShadowCaster2D).GetField("m_ShapePath", BindingFlags.NonPublic | BindingFlags.Instance);
         _shapePathHashField = typeof(ShadowCaster2D).GetField("m_ShapePathHash", BindingFlags.NonPublic | BindingFlags.Instance);
-        _generateShadowMeshMethod = typeof(ShadowCaster2D).Assembly.GetType("UnityEngine.Rendering.Universal.ShadowUtility")
+        _generateShadowMeshMethod = typeof(ShadowCaster2D).Assembly
+            .GetType("UnityEngine.Rendering.Universal.ShadowUtility")
             .GetMethod("GenerateShadowMesh", BindingFlags.Public | BindingFlags.Static);
     }
 
-    public void GenerateShadowMesh() => _generateShadowMeshMethod.Invoke(_shadowCaster2D, new object[] { Mesh, ShapePath });
+    public void GenerateShadowMesh() =>
+        _generateShadowMeshMethod.Invoke(_shadowCaster2D, new object[] { Mesh, ShapePath });
 }
