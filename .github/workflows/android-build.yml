@@ -1,13 +1,11 @@
 name: Unity Android Build Pipeline
 
-# Trigger conditions
 on:
   push:
     branches:
       - main
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
 
-# Environment variables
 env:
   UNITY_VERSION: 2022.1.10f1
   BUILD_NAME: unity2d-prototype
@@ -19,14 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      # Step 1: Checkout repository
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true
       
-      # Step 2: Cache Library folder for faster builds
       - name: Cache Unity Library
         uses: actions/cache@v3
         with:
@@ -36,14 +32,19 @@ jobs:
             Library-Android-
             Library-
       
-      # Step 3: Setup Java Development Kit (JDK)
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '11'
       
-      # Step 4: Free disk space for build
+      # ✅ ADD THIS STEP
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+        with:
+          api-level: 34
+          build-tools-version: 34.0.0
+      
       - name: Free Disk Space
         run: |
           sudo rm -rf /usr/share/dotnet
@@ -51,7 +52,6 @@ jobs:
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       
-      # Step 5: Build Android APK
       - name: Build Android APK
         uses: game-ci/unity-builder@v4
         env:
@@ -69,7 +69,6 @@ jobs:
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
           allowDirtyBuild: true
       
-      # Step 6: Build Android AAB (App Bundle)
       - name: Build Android AAB
         uses: game-ci/unity-builder@v4
         env:
@@ -87,7 +86,6 @@ jobs:
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
           allowDirtyBuild: true
       
-      # Step 7: Upload APK as artifact
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         if: success()
@@ -96,7 +94,6 @@ jobs:
           path: ${{ env.BUILD_PATH }}/**/*.apk
           retention-days: 30
       
-      # Step 8: Upload AAB as artifact
       - name: Upload AAB Artifact
         uses: actions/upload-artifact@v4
         if: success()
@@ -105,7 +102,6 @@ jobs:
           path: ${{ env.BUILD_PATH }}/**/*.aab
           retention-days: 30
       
-      # Step 9: Send Slack notification on success
       - name: Send Slack Notification
         if: success()
         continue-on-error: true
@@ -165,7 +161,6 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
       
-      # Step 10: Send Slack notification on failure
       - name: Send Slack Notification on Failure
         if: failure()
         continue-on-error: true
