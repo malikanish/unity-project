@@ -1,13 +1,17 @@
 name: Unity Android Build Pipeline
 
+# Trigger conditions
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger
 
+# Environment variables
 env:
   UNITY_VERSION: 2022.1.10f1
+  BUILD_NAME: unity2d-prototype
+  BUILD_PATH: build/Android
 
 jobs:
   build-android:
@@ -22,7 +26,7 @@ jobs:
           fetch-depth: 0
           lfs: true
       
-      # Step 2: Cache Library folder
+      # Step 2: Cache Library folder for faster builds
       - name: Cache Unity Library
         uses: actions/cache@v3
         with:
@@ -32,7 +36,7 @@ jobs:
             Library-Android-
             Library-
       
-      # Step 3: Free disk space
+      # Step 3: Free disk space for build
       - name: Free Disk Space
         run: |
           sudo rm -rf /usr/share/dotnet
@@ -40,7 +44,7 @@ jobs:
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       
-      # Step 4: Build APK
+      # Step 4: Build Android APK
       - name: Build Android APK
         uses: game-ci/unity-builder@v4
         env:
@@ -51,13 +55,15 @@ jobs:
           projectPath: .
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: Android
+          buildName: ${{ env.BUILD_NAME }}
+          buildsPath: ${{ env.BUILD_PATH }}
           androidExportType: androidPackage
           androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE }}
           androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
           androidKeyaliasName: ${{ secrets.ANDROID_KEY_ALIAS }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
       
-      # Step 5: Build AAB
+      # Step 5: Build Android AAB (App Bundle)
       - name: Build Android AAB
         uses: game-ci/unity-builder@v4
         env:
@@ -68,31 +74,33 @@ jobs:
           projectPath: .
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: Android
+          buildName: ${{ env.BUILD_NAME }}
+          buildsPath: ${{ env.BUILD_PATH }}
           androidExportType: androidAppBundle
           androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE }}
           androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
           androidKeyaliasName: ${{ secrets.ANDROID_KEY_ALIAS }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
       
-      # Step 6: Upload APK
+      # Step 6: Upload APK as artifact
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: Android-APK
-          path: build/Android/*.apk
+          name: Android-APK-${{ github.sha }}
+          path: ${{ env.BUILD_PATH }}/**/*.apk
           retention-days: 30
       
-      # Step 7: Upload AAB
+      # Step 7: Upload AAB as artifact
       - name: Upload AAB Artifact
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: Android-AAB
-          path: build/Android/*.aab
+          name: Android-AAB-${{ github.sha }}
+          path: ${{ env.BUILD_PATH }}/**/*.aab
           retention-days: 30
       
-      # Step 8: Slack Notification (Success)
+      # Step 8: Send Slack notification on success
       - name: Send Slack Notification
         if: success()
         continue-on-error: true
@@ -100,14 +108,51 @@ jobs:
         with:
           payload: |
             {
-              "text": "✅ Android Build Successful",
               "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "✅ Android Build Successful",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n<${{ github.event.head_commit.url }}|${{ github.sha }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author:*\n${{ github.actor }}"
+                    }
+                  ]
+                },
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}"
+                    "text": "*Build Artifacts:*\n• <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Download APK & AAB>"
                   }
+                },
+                {
+                  "type": "context",
+                  "elements": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "Workflow: ${{ github.workflow }} | Run #${{ github.run_number }}"
+                    }
+                  ]
                 }
               ]
             }
@@ -115,7 +160,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
       
-      # Step 9: Slack Notification (Failure)
+      # Step 9: Send Slack notification on failure
       - name: Send Slack Notification on Failure
         if: failure()
         continue-on-error: true
@@ -123,13 +168,41 @@ jobs:
         with:
           payload: |
             {
-              "text": "❌ Android Build Failed",
               "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "❌ Android Build Failed",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n${{ github.sha }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author:*\n${{ github.actor }}"
+                    }
+                  ]
+                },
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}"
+                    "text": "*Action Required:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Build Logs>"
                   }
                 }
               ]
