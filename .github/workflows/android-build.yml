@@ -53,15 +53,11 @@ jobs:
           projectPath: unity2d-prototype
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: Android
-          buildMethod: UnityBuilderAction.BuildScript.Build
-          androidAppBundle: false
-          androidKeystoreName: user.keystore
+          androidExportType: androidPackage
           androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE }}
           androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
           androidKeyaliasName: ${{ secrets.ANDROID_KEY_ALIAS }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
-          buildName: ${{ env.BUILD_NAME }}
-          buildsPath: ${{ env.BUILD_PATH }}
       
       # Step 5: Build AAB (Android App Bundle)
       - name: Build Android AAB
@@ -74,33 +70,31 @@ jobs:
           projectPath: unity2d-prototype
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: Android
-          buildMethod: UnityBuilderAction.BuildScript.Build
-          androidAppBundle: true
-          androidKeystoreName: user.keystore
+          androidExportType: androidAppBundle
           androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE }}
           androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
           androidKeyaliasName: ${{ secrets.ANDROID_KEY_ALIAS }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
-          buildName: ${{ env.BUILD_NAME }}
-          buildsPath: ${{ env.BUILD_PATH }}
       
-      # Step 7: Upload APK as Artifact
+      # Step 6: Upload APK as Artifact
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: Android-APK-${{ github.sha }}
-          path: ${{ env.BUILD_PATH }}/**/*.apk
+          path: build/Android/**/*.apk
           retention-days: 30
       
-      # Step 8: Upload AAB as Artifact
+      # Step 7: Upload AAB as Artifact
       - name: Upload AAB Artifact
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: Android-AAB-${{ github.sha }}
-          path: ${{ env.BUILD_PATH }}/**/*.aab
+          path: build/Android/**/*.aab
           retention-days: 30
       
-      # Step 9: Send Slack Notification
+      # Step 8: Send Slack Notification
       - name: Send Slack Notification
         if: success()
         uses: slackapi/slack-github-action@v1.25.0
@@ -159,7 +153,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
       
-      # Step 10: Send Slack Notification on Failure
+      # Step 9: Send Slack Notification on Failure
       - name: Send Slack Notification on Failure
         if: failure()
         uses: slackapi/slack-github-action@v1.25.0
@@ -209,7 +203,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
       
-      # Step 11: Cleanup
+      # Step 10: Cleanup
       - name: Cleanup Keystore
         if: always()
         run: |
