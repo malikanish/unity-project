@@ -60,7 +60,6 @@ jobs:
           androidKeyaliasName: ${{ secrets.ANDROID_KEY_ALIAS }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
           allowDirtyBuild: true
-          customParameters: -quit -nographics
       
       - name: Build Android AAB
         uses: game-ci/unity-builder@v4
@@ -79,7 +78,6 @@ jobs:
           androidKeyaliasName: ${{ secrets.ANDROID_KEY_ALIAS }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
           allowDirtyBuild: true
-          customParameters: -quit -nographics
       
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
