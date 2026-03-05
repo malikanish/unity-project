@@ -1,87 +1,147 @@
-# 🎮 Prototype 
+# Unity Android CI/CD Pipeline
 
-[![Unity](https://img.shields.io/badge/Unity-2022.1.10f1-blue?logo=unity)](https://github.com/topics/unity)
-[![C#](https://img.shields.io/badge/C%23-9.0-blue?logo=c-sharp)](https://github.com/topics/csharp)
+Automated CI/CD pipeline for Unity Android builds using GitHub Actions with APK/AAB generation, artifact storage, and Slack notifications.
 
-This is a sample **2D Platformer Game** unity project for learning and prototyping purposes.<br />
-It features some basic 2D game stuff for unity.
+##  Pipeline Architecture
+```
+Push to main / Manual Trigger
+         ↓
+┌────────────────────────────┐
+│   Checkout & Setup         │
+│   • Git LFS                │
+│   • Cache Unity Library    │
+│   • Free Disk Space        │
+└────────────┬───────────────┘
+             ↓
+┌────────────────────────────┐
+│   Build Phase              │
+│   • APK (Direct Install)   │
+│   • AAB (Play Store)       │
+└────────────┬───────────────┘
+             ↓
+┌────────────────────────────┐
+│   Upload & Notify          │
+│   • GitHub Artifacts       │
+│   • Slack Notification     │
+└────────────────────────────┘
+```
 
-![Screenshot0](./Screenshot0.gif)
-![Screenshot1](./Screenshot1.gif)
-![Screenshot2](./Screenshot2.gif)
+**Workflow File**: `.github/workflows/android-build.yml`
 
-## 🎯 Objectives
+##  Technical Stack
 
-- [x] **🚀 Movement:**
-    - [x] **🏃 Platformer Movement _using [Physics 2D](https://docs.unity3d.com/Manual/Physics2DReference.html)_:**
-        - [x] Horizontal Movement.
-        - [x] Vertical Movement (Jump).
-    - [x] **🎞️ Movement Animations _using [Animator](https://docs.unity3d.com/Manual/AnimatorWindow.html) Parameters_.**
-    - [x] **🎞️ Movement-Dust-Effects Animations _by [Instantiating Objects](https://docs.unity3d.com/ScriptReference/Object.Instantiate.html) and using [Animator](https://docs.unity3d.com/Manual/AnimatorWindow.html) States Names_.**
+- **Runner**: ubuntu-latest
+- **Unity Version**: 2022.3.20f1 (LTS)
+- **Build Mode**: Batchmode (headless)
+- **Output**: `build/Android/`
+- **Artifacts**: 30-day retention
 
-- [x] 🔌 **Mechanism:**
-    - 🚪 **Switches and Doors Mechanism:**
-        - [x] Switch for Multiple Doors.
-        - [x] Door for Multiple Switches.
-        - [x] Switch and Door Animations _by [Animating Transform Properties](https://docs.unity3d.com/Manual/animeditor-AnimatingAGameObject.html)_.
+##  Required GitHub Secrets
 
-- [x] 🤺 **Combat:**
-    - [x] **💥 Explosion Effect _using [Physics 2D](https://docs.unity3d.com/Manual/Physics2DReference.html)_.** 
-    - [x] **🎞️ Damage Animations.**
-    - [x] **🏹 Projectile Throwing _by [Instantiating Objects](https://docs.unity3d.com/ScriptReference/Object.Instantiate.html)_ and _using [Animator](https://docs.unity3d.com/Manual/AnimatorWindow.html) Parameters_.**
+| Secret | Description |
+|--------|-------------|
+| `UNITY_LICENSE` | Unity license file (.ulf) content |
+| `UNITY_EMAIL` | Unity account email |
+| `UNITY_PASSWORD` | Unity account password |
+| `ANDROID_KEYSTORE` | Base64 encoded keystore |
+| `ANDROID_KEYSTORE_PASS` | Keystore password |
+| `ANDROID_KEY_ALIAS` | Key alias name |
+| `ANDROID_KEY_ALIAS_PASS` | Key alias password |
+| `SLACK_WEBHOOK_URL` | Slack webhook (optional) |
 
-- [x] **🤖 Artificial Intelligence (AI):**
-    - **🏃 Automated Platformer Movement:**
-        - [x] Automated Horizontal Movement.
-    - [x] **👁️ Detections using _[Physics 2D LineCast](https://docs.unity3d.com/ScriptReference/Physics2D.Linecast.html)_:**
-        - [x] Wall Detection for Turning Round.
-        - [x] Floor Detection for Gap Avoidance.
-        - [x] Player Detection for Chase.
-    - [x] **🏹 Automated Projectile Throwing.**
+**Setup**: `Repository Settings → Secrets and variables → Actions → New repository secret`
 
+##  Quick Setup
 
-- [x] **🏕️ Environment:**
-    - [x] **🗺️ Map:**
-        - [x] Tile-Mapping _by [Nesting Objects](https://docs.unity3d.com/Manual/Hierarchy.html) (Classic)_.
-        - [x] Tile-Mapping _using [TileMap Components](https://docs.unity3d.com/Manual/class-Tilemap.html)_.
-    - [x] **🎥 Camera:**
-        - [x] Player-Follower Camera.
-        - [x] Smooth Camera Movement _using [Linear interpolation (Lerp)](https://en.wikipedia.org/wiki/Linear_interpolation)_.
-        - [x] Pixel Perfect Camera _using [Pixel Perfect Camera Component](https://docs.unity3d.com/Packages/com.unity.2d.pixel-perfect@4.0/manual/index.html)_.
-        - [x] Pixel Perfect Camera _using [Pixel Perfect Camera Component](https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@13.1/manual/2d-pixelperfect.html) of [Universal Render Pipeline (URP)](https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@13.1/manual/index.html)_.
-    - [x] **💡 Light:**
-        - [x] Lighting _using [Light Components](https://docs.unity3d.com/Manual/Lights.html) (3D)_.
-        - [x] Lighting _using [Light 2D Components](https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@13.1/manual/Lights-2D-intro.html) of [Universal Render Pipeline (URP)](https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@13.1/manual/index.html)_.
-    - [x] **📣 Audio _using [Audio Source Component](https://docs.unity3d.com/Manual/class-AudioSource.html)_:**
-        - [x] Background Music (BGM) with volume, pitch, and **looping** features _using [Audio Source Play](https://docs.unity3d.com/ScriptReference/AudioSource.Play.html)_.
-        - [x] Sound Effects (SFX) with volume, pitch, and **overlapping** features _using [Audio Source Play One Shot](https://docs.unity3d.com/ScriptReference/AudioSource.PlayOneShot.html)_.
-        - [x] Distance-Relative Audio _using 3D Sound Settings of [Audio Source Component](https://docs.unity3d.com/Manual/class-AudioSource.html)_.
+### 1. Configure Secrets
+Add all 8 secrets to your GitHub repository settings.
 
-- [ ] **🔲 User Interface (UI):**
-    - [ ] **💯 Head-Up Display (HUD):**
-        - [ ] Health Bar.
-        - [ ] Score Counter.
-    - [ ] **🖼️ Title Menu:**
-        - [ ] 🚧 ...
-        - [ ] 🚧 ...
-        - [ ] 🚧 ...
-    - [ ] **⚙️ Settings Menu :**
-        - [ ] 🚧 ...
-        - [ ] 🚧 ...
-        - [ ] 🚧 ...
+### 2. Trigger Build
+```bash
+# Automatic: Push to main
+git push origin main
 
-## 🏭 Environment
+# Manual: Actions tab → Run workflow
+```
 
-- Runtime: **[Windows](https://www.microsoft.com/en-us/windows) 10**
-- Game Engine: **[Unity](https://unity.com) 2022**
-- Scripts Language: **[C#](https://github.com/dotnet/csharplang) 9.0**
-- Scripts Editor: **[Visual Studio](https://visualstudio.microsoft.com) 2022**
+### 3. Download Artifacts
+Navigate to: `Actions → Workflow Run → Artifacts`
 
-## 📚 Learning Resources
+##  Performance
 
-- 📕 [Unity Documentation](https://docs.unity.com)
-- 📼 [Game Dev Beginner](https://www.youtube.com/@GameDevBeginner/videos)
-- 📼 [Unity 4 2D Essential Training](https://www.linkedin.com/learning/unity-4-2d-essential-training)
+| Metric | First Build | Cached Build |
+|--------|-------------|--------------|
+| Total Time | ~30 min | ~18 min |
+| Cache Savings | - | 40% faster |
 
-## 📄 License
-[MIT](./LICENSE)
+**Optimizations**:
+- Unity Library caching
+- Disk space cleanup (~14GB freed)
+- Parallel artifact uploads
+
+##  Slack Notifications
+
+**Success**: ✅ Status, repo, branch, commit, artifact link  
+**Failure**: ❌ Status, error context, logs link
+
+**Setup Webhook**:
+1. https://api.slack.com/apps → Create App
+2. Enable "Incoming Webhooks"
+3. Copy URL to `SLACK_WEBHOOK_URL` secret
+
+##  Design Decisions
+
+### Why Cache Unity Library?
+Reduces build time by 40% (30min → 18min) by reusing unchanged dependencies.
+
+### Why Build Both APK & AAB?
+- **APK**: Direct device testing
+- **AAB**: Google Play Store requirement
+
+### Why Free Disk Space?
+Unity builds need significant storage. Cleanup prevents out-of-space failures.
+
+### Why Separate Artifacts?
+Clear organization, selective downloads, version tracking via commit SHA.
+
+### Why continue-on-error for Slack?
+Build succeeds even if Slack fails - notifications are optional, not critical.
+
+##  Troubleshooting
+
+**License Failed**: Verify `UNITY_LICENSE` contains complete .ulf content  
+**Keystore Error**: Check base64 encoding and passwords  
+**Build Failed**: Test local build first, check Unity version match  
+**No Slack**: Verify webhook URL and channel access
+
+##  Build Success Evidence
+
+Latest successful build:
+- ✅ Status: Success
+- ⏱️ Duration: 15m 8s
+- 📦 APK: 25.4 MB
+- 📦 AAB: 25.5 MB
+- 🔗 Commit: f16e026
+
+## ⏱ Completion Time
+
+- **Pipeline Setup**: 2-3 hours
+- **First Build**: 30 minutes
+- **Subsequent Builds**: 18 minutes
+
+##  Requirements Checklist
+
+- [x] Triggers: Push to main + manual dispatch
+- [x] Runner: ubuntu-latest
+- [x] Unity Version: Explicitly defined (2022.3.20f1)
+- [x] Batchmode: Headless builds
+- [x] Outputs: APK + AAB in structured directory
+- [x] Artifacts: Uploaded with actions/upload-artifact
+- [x] Slack: Repo, branch, commit, artifact link
+- [x] Secrets: All credentials secured
+- [x] Bonus: Caching + error handling
+
+---
+
+**Repository**: [unity2d-prototype](https://github.com/malikanish/unity-project)  
+**Workflow**: `.github/workflows/android-build.yml`
