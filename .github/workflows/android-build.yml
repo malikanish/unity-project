@@ -30,6 +30,12 @@ jobs:
             Library-Android-
             Library-
       
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
       - name: Free Disk Space
         run: |
           sudo rm -rf /usr/share/dotnet
@@ -43,6 +49,7 @@ jobs:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
         with:
           projectPath: .
           unityVersion: ${{ env.UNITY_VERSION }}
@@ -53,6 +60,7 @@ jobs:
           androidKeyaliasName: ${{ secrets.ANDROID_KEY_ALIAS }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
           allowDirtyBuild: true
+          customParameters: -quit -nographics
       
       - name: Build Android AAB
         uses: game-ci/unity-builder@v4
@@ -60,6 +68,7 @@ jobs:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
         with:
           projectPath: .
           unityVersion: ${{ env.UNITY_VERSION }}
@@ -70,13 +79,14 @@ jobs:
           androidKeyaliasName: ${{ secrets.ANDROID_KEY_ALIAS }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
           allowDirtyBuild: true
+          customParameters: -quit -nographics
       
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         if: success()
         with:
           name: Android-APK-${{ github.sha }}
-          path: build/Android/*.apk
+          path: build/Android/**/*.apk
           retention-days: 30
       
       - name: Upload AAB Artifact
@@ -84,7 +94,7 @@ jobs:
         if: success()
         with:
           name: Android-AAB-${{ github.sha }}
-          path: build/Android/*.aab
+          path: build/Android/**/*.aab
           retention-days: 30
       
       - name: Send Slack Notification

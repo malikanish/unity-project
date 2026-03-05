@@ -6,6 +6,7 @@ public class GameManager : Singleton<GameManager>
 {
     internal override void Awake()
     {
+        base.Awake(); // Call base singleton initialization
         hideFlags = HideFlags.DontSaveInBuild;
     }
 
