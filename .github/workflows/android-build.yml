@@ -7,20 +7,28 @@ on:
   workflow_dispatch:
 
 env:
-  UNITY_VERSION: 2022.1.10f1
+  UNITY_VERSION: 2022.3.20f1       # ✅ FIX 1: LTS version use karo (2022.1.x broken tha)
+  BUILD_NAME: unity2d-prototype
+  BUILD_PATH: build/Android
 
 jobs:
   build-android:
     name: Build for Android
     runs-on: ubuntu-latest
-    
+
     steps:
+      # ─────────────────────────────────────────
+      # STEP 1: Code checkout
+      # ─────────────────────────────────────────
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true
-      
+
+      # ─────────────────────────────────────────
+      # STEP 2: Cache Unity Library (speed boost)
+      # ─────────────────────────────────────────
       - name: Cache Unity Library
         uses: actions/cache@v3
         with:
@@ -29,73 +37,124 @@ jobs:
           restore-keys: |
             Library-Android-
             Library-
-      
-      - name: Setup Java JDK
+
+      # ─────────────────────────────────────────
+      # STEP 3: Java 17 setup
+      # ✅ FIX 2: Pehle Java install karo, phir path capture karo
+      # ─────────────────────────────────────────
+      - name: Setup Java JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-      
+
+      # ✅ FIX 3: JAVA_HOME ko env variable mein save karo properly
+      - name: Set JAVA_HOME Environment Variable
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
+          echo "✅ JAVA_HOME set to: $JAVA_HOME"
+          java -version
+
+      # ─────────────────────────────────────────
+      # STEP 4: Disk space free karo (Unity bada hota hai)
+      # ─────────────────────────────────────────
       - name: Free Disk Space
         run: |
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-      
+          df -h  # disk space check karo after cleanup
+
+      # ─────────────────────────────────────────
+      # STEP 5: Build APK
+      # ✅ FIX 4: customParameters mein JdkPath explicitly pass karo
+      # ─────────────────────────────────────────
       - name: Build Android APK
         uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
         with:
           projectPath: .
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: Android
+          buildName: ${{ env.BUILD_NAME }}
+          buildsPath: ${{ env.BUILD_PATH }}
           androidExportType: androidPackage
           androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE }}
           androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
           androidKeyaliasName: ${{ secrets.ANDROID_KEY_ALIAS }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
           allowDirtyBuild: true
-      
+          # ✅ FIX 5: JDK path Unity ko explicitly batao
+          customParameters: -JdkPath ${{ env.JAVA_HOME }} -AndroidSdkRoot /usr/local/lib/android/sdk
+
+      # ─────────────────────────────────────────
+      # STEP 6: Build AAB
+      # ─────────────────────────────────────────
       - name: Build Android AAB
         uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
         with:
           projectPath: .
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: Android
+          buildName: ${{ env.BUILD_NAME }}
+          buildsPath: ${{ env.BUILD_PATH }}
           androidExportType: androidAppBundle
           androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE }}
           androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
           androidKeyaliasName: ${{ secrets.ANDROID_KEY_ALIAS }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
           allowDirtyBuild: true
-      
+          customParameters: -JdkPath ${{ env.JAVA_HOME }} -AndroidSdkRoot /usr/local/lib/android/sdk
+
+      # ─────────────────────────────────────────
+      # STEP 7: Verify build output (debug step)
+      # ─────────────────────────────────────────
+      - name: Verify Build Output
+        if: always()
+        run: |
+          echo "=== Build Directory Contents ==="
+          find build/ -type f 2>/dev/null || echo "build/ folder not found"
+          echo "=== APK files ==="
+          find . -name "*.apk" 2>/dev/null || echo "No APK found"
+          echo "=== AAB files ==="
+          find . -name "*.aab" 2>/dev/null || echo "No AAB found"
+
+      # ─────────────────────────────────────────
+      # STEP 8: Upload APK artifact
+      # ─────────────────────────────────────────
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         if: success()
         with:
           name: Android-APK-${{ github.sha }}
-          path: build/Android/**/*.apk
+          path: ${{ env.BUILD_PATH }}/**/*.apk
           retention-days: 30
-      
+          if-no-files-found: warn
+
+      # ─────────────────────────────────────────
+      # STEP 9: Upload AAB artifact
+      # ─────────────────────────────────────────
       - name: Upload AAB Artifact
         uses: actions/upload-artifact@v4
         if: success()
         with:
           name: Android-AAB-${{ github.sha }}
-          path: build/Android/**/*.aab
+          path: ${{ env.BUILD_PATH }}/**/*.aab
           retention-days: 30
-      
-      - name: Send Slack Notification
+          if-no-files-found: warn
+
+      # ─────────────────────────────────────────
+      # STEP 10: Slack - SUCCESS notification
+      # ─────────────────────────────────────────
+      - name: Send Slack Notification (Success)
         if: success()
         continue-on-error: true
         uses: slackapi/slack-github-action@v1.25.0
@@ -153,8 +212,11 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-      
-      - name: Send Slack Notification on Failure
+
+      # ─────────────────────────────────────────
+      # STEP 11: Slack - FAILURE notification
+      # ─────────────────────────────────────────
+      - name: Send Slack Notification (Failure)
         if: failure()
         continue-on-error: true
         uses: slackapi/slack-github-action@v1.25.0
