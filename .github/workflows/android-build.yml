@@ -94,7 +94,8 @@ jobs:
       
       # Step 8: Slack Notification (Success)
       - name: Send Slack Notification
-        if: success() && secrets.SLACK_WEBHOOK_URL != ''
+        if: success()
+        continue-on-error: true
         uses: slackapi/slack-github-action@v1.25.0
         with:
           payload: |
@@ -116,7 +117,8 @@ jobs:
       
       # Step 9: Slack Notification (Failure)
       - name: Send Slack Notification on Failure
-        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
+        if: failure()
+        continue-on-error: true
         uses: slackapi/slack-github-action@v1.25.0
         with:
           payload: |
