@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  UNITY_VERSION: 2022.3.20f1       # ✅ FIX 1: LTS version use karo (2022.1.x broken tha)
+  UNITY_VERSION: 2022.3.20f1      
   BUILD_NAME: unity2d-prototype
   BUILD_PATH: build/Android
 
@@ -40,7 +40,6 @@ jobs:
 
       # ─────────────────────────────────────────
       # STEP 3: Java 17 setup
-      # ✅ FIX 2: Pehle Java install karo, phir path capture karo
       # ─────────────────────────────────────────
       - name: Setup Java JDK 17
         uses: actions/setup-java@v4
@@ -48,7 +47,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # ✅ FIX 3: JAVA_HOME ko env variable mein save karo properly
       - name: Set JAVA_HOME Environment Variable
         run: |
           echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
@@ -56,7 +54,7 @@ jobs:
           java -version
 
       # ─────────────────────────────────────────
-      # STEP 4: Disk space free karo (Unity bada hota hai)
+      # STEP 4: Disk space free 
       # ─────────────────────────────────────────
       - name: Free Disk Space
         run: |
@@ -68,7 +66,6 @@ jobs:
 
       # ─────────────────────────────────────────
       # STEP 5: Build APK
-      # ✅ FIX 4: customParameters mein JdkPath explicitly pass karo
       # ─────────────────────────────────────────
       - name: Build Android APK
         uses: game-ci/unity-builder@v4
@@ -88,7 +85,6 @@ jobs:
           androidKeyaliasName: ${{ secrets.ANDROID_KEY_ALIAS }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
           allowDirtyBuild: true
-          # ✅ FIX 5: JDK path Unity ko explicitly batao
           customParameters: -JdkPath ${{ env.JAVA_HOME }} -AndroidSdkRoot /usr/local/lib/android/sdk
 
       # ─────────────────────────────────────────
