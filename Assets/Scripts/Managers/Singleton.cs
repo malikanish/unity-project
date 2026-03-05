@@ -32,7 +32,9 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
         if (s_instance && s_instance != this)
         {
             if (Application.isPlaying) Destroy(this);
+#if UNITY_EDITOR
             else UnityEditor.EditorApplication.delayCall += () => DestroyImmediate(this);
+#endif
             Debug.LogWarning($"Cannot create multiple instances of {s_instance.GetType()} component.\nAn instance is already attached to " +
                 $"\"{s_instance.name}\" object. Therefore, duplicate instance attached to \"{gameObject.name}\" object is destroyed.");
         }

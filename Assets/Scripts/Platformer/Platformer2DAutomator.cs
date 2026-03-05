@@ -1,5 +1,7 @@
 using System;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 
 [RequireComponent(typeof(Platformer2D), typeof(DetectorLine2D), typeof(DetectorLine2D))]
@@ -95,11 +97,13 @@ public class Platformer2DAutomator : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+#if UNITY_EDITOR
         if (SpottingActor)
         {
             Handles.Label(new Vector3(transform.position.x, transform.position.y + 2f, 0f), 
                 $"{ActorTransform.name}! {Mathf.Round(_actorSpottingStartTime - Time.time)}s...");
         }
+#endif
     }
 }
 
