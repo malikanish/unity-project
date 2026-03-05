@@ -55,13 +55,12 @@ jobs:
           projectPath: .
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: Android
-          buildName: ${{ env.BUILD_NAME }}
-          buildsPath: ${{ env.BUILD_PATH }}
           androidExportType: androidPackage
           androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE }}
           androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
           androidKeyaliasName: ${{ secrets.ANDROID_KEY_ALIAS }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
+          allowDirtyBuild: true
       
       # Step 5: Build Android AAB (App Bundle)
       - name: Build Android AAB
@@ -74,13 +73,12 @@ jobs:
           projectPath: .
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: Android
-          buildName: ${{ env.BUILD_NAME }}
-          buildsPath: ${{ env.BUILD_PATH }}
           androidExportType: androidAppBundle
           androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE }}
           androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
           androidKeyaliasName: ${{ secrets.ANDROID_KEY_ALIAS }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
+          allowDirtyBuild: true
       
       # Step 6: Upload APK as artifact
       - name: Upload APK Artifact
