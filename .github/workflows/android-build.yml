@@ -1,17 +1,13 @@
 name: Unity Android Build Pipeline
 
-# Trigger conditions
 on:
   push:
     branches:
       - main
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
 
-# Environment variables
 env:
   UNITY_VERSION: 2022.1.10f1
-  BUILD_NAME: unity2d-prototype
-  BUILD_PATH: Builds/Android
 
 jobs:
   build-android:
@@ -26,7 +22,7 @@ jobs:
           fetch-depth: 0
           lfs: true
       
-      # Step 2: Cache Library folder for faster builds
+      # Step 2: Cache Library folder
       - name: Cache Unity Library
         uses: actions/cache@v3
         with:
@@ -36,11 +32,13 @@ jobs:
             Library-Android-
             Library-
       
-      # Step 3: Setup Android Keystore
-      - name: Setup Android Keystore
+      # Step 3: Free disk space
+      - name: Free Disk Space
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 --decode > ${{ github.workspace }}/user.keystore
-          echo "KEYSTORE_PATH=${{ github.workspace }}/user.keystore" >> $GITHUB_ENV
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       
       # Step 4: Build APK
       - name: Build Android APK
@@ -59,7 +57,7 @@ jobs:
           androidKeyaliasName: ${{ secrets.ANDROID_KEY_ALIAS }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
       
-      # Step 5: Build AAB (Android App Bundle)
+      # Step 5: Build AAB
       - name: Build Android AAB
         uses: game-ci/unity-builder@v4
         env:
@@ -76,76 +74,39 @@ jobs:
           androidKeyaliasName: ${{ secrets.ANDROID_KEY_ALIAS }}
           androidKeyaliasPass: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
       
-      # Step 6: Upload APK as Artifact
+      # Step 6: Upload APK
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: Android-APK-${{ github.sha }}
-          path: build/Android/**/*.apk
+          name: Android-APK
+          path: build/Android/*.apk
           retention-days: 30
       
-      # Step 7: Upload AAB as Artifact
+      # Step 7: Upload AAB
       - name: Upload AAB Artifact
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: Android-AAB-${{ github.sha }}
-          path: build/Android/**/*.aab
+          name: Android-AAB
+          path: build/Android/*.aab
           retention-days: 30
       
-      # Step 8: Send Slack Notification
+      # Step 8: Slack Notification (Success)
       - name: Send Slack Notification
-        if: success()
+        if: success() && secrets.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1.25.0
         with:
           payload: |
             {
+              "text": "✅ Android Build Successful",
               "blocks": [
-                {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "✅ Android Build Successful",
-                    "emoji": true
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Repository:*\n${{ github.repository }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Branch:*\n${{ github.ref_name }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Commit:*\n<${{ github.event.head_commit.url }}|${{ github.sha }}>"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Author:*\n${{ github.actor }}"
-                    }
-                  ]
-                },
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Build Artifacts:*\n• <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Download APK & AAB>"
+                    "text": "*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}"
                   }
-                },
-                {
-                  "type": "context",
-                  "elements": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "Workflow: ${{ github.workflow }} | Run #${{ github.run_number }}"
-                    }
-                  ]
                 }
               ]
             }
@@ -153,48 +114,20 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
       
-      # Step 9: Send Slack Notification on Failure
+      # Step 9: Slack Notification (Failure)
       - name: Send Slack Notification on Failure
-        if: failure()
+        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1.25.0
         with:
           payload: |
             {
+              "text": "❌ Android Build Failed",
               "blocks": [
-                {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "❌ Android Build Failed",
-                    "emoji": true
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Repository:*\n${{ github.repository }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Branch:*\n${{ github.ref_name }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Commit:*\n${{ github.sha }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Author:*\n${{ github.actor }}"
-                    }
-                  ]
-                },
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Action Required:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Build Logs>"
+                    "text": "*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}"
                   }
                 }
               ]
@@ -202,9 +135,3 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-      
-      # Step 10: Cleanup
-      - name: Cleanup Keystore
-        if: always()
-        run: |
-          rm -f ${{ github.workspace }}/user.keystore
