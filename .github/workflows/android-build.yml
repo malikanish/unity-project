@@ -8,8 +8,6 @@ on:
 
 env:
   UNITY_VERSION: 2022.1.10f1
-  BUILD_NAME: unity2d-prototype
-  BUILD_PATH: build/Android
 
 jobs:
   build-android:
@@ -31,16 +29,6 @@ jobs:
           restore-keys: |
             Library-Android-
             Library-
-      
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      
-      # ✅ ADD THIS STEP
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
       
       - name: Free Disk Space
         run: |
@@ -88,7 +76,7 @@ jobs:
         if: success()
         with:
           name: Android-APK-${{ github.sha }}
-          path: ${{ env.BUILD_PATH }}/**/*.apk
+          path: build/Android/*.apk
           retention-days: 30
       
       - name: Upload AAB Artifact
@@ -96,7 +84,7 @@ jobs:
         if: success()
         with:
           name: Android-AAB-${{ github.sha }}
-          path: ${{ env.BUILD_PATH }}/**/*.aab
+          path: build/Android/*.aab
           retention-days: 30
       
       - name: Send Slack Notification
